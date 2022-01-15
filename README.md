@@ -12,7 +12,7 @@ Running a molecular simulation with the CL&Pol polarizable force field for ionic
 6. Run a production trajectory.
 7. Do post-treatment calculations of structural and dynamic quantities from the trajectory.
 
-GO SLOWLY. TRY TO UNDERSTAND EACH STEP.
+*GO SLOWLY. INSPECT INPUT AND OUTPUT FILES. TRY TO UNDERSTAND EACH STEP.*
 
 
 ## 1. Make sure software is installed
@@ -76,3 +76,6 @@ Run `fftool` again to generate the LAMMPS in put files:
         
 Study the `in.lmp` and `data.lmp` files. These are LAMMPS input files.
 
+The `data.lmp` describes the system to be simulated, including atomic coordinates, electrostatic charges and molecular topology (how atoms are bonded). LAMMPS is a very atomistic code, working at the level of the atoms, with molecules being thinly defined just by an index.
+
+The `in.lmp` contains LAMMPS commands to perform the simulation, but also contains in our examples certain informations concerning the force field, namely the Lennard-Jones parameters. LAMMPS has a huge number of commands, about which you can learn at [https://docs.lammps.org/Commands.html]. An expert user knows all the commands he uses in detail.
