@@ -45,15 +45,18 @@ These tools are available on [https://github.com/paduagroup]
         git clone https://github.com/paduagroup/clanpol
         
 You can check that `fftool` runs and learn about the command-line options
+
         ~/sim/fftool/fftool -h
         
 ## 3. Create an initial simulation box
 
 Let's try an ionic liquids composed of the butylmethylimidazolium cation and the bistriflamide anion, [C4C1im][Ntf2]
+
         mkdir c4c1im_ntf2
         cd c4c1im_ntf2
 
 Copy the CL&P data base and molecule specification files for the ions:
+
         cp ~/sim/clandp/clandp.ff .
         cp ~/sim/clandp/c4c1im.zmat .
         cp ~/sim/clandp/ntf2.zmat .
@@ -61,17 +64,21 @@ Copy the CL&P data base and molecule specification files for the ions:
 Study these files. The molecule specifications files contain atomic coordinates in `xyz` or `z-matrix` format and point to a file `.ff` which is a database of force field parameters.
 
 Use `fftool` to create a system with one ion pair in a cubic box of 30 Å:
+
         ~/sim/fftool/fftool 1 c4c1im.zmat 1 ntf2.zmat -b 30
 
 Verify the charges of the ions are correct. Inspect the `pack.inp` file which is an input for `packmol`.
 
 Use `packmol` to generate the atomic coordinates placing the ions in the box:
+
         packmol < pack.inp
 
 Have a look at the box:
+
         vmd simbox.xyz
 
 Run `fftool` again to generate the LAMMPS in put files:
+
         ~/sim/fftool/fftool 1 c4c1im.zmat 1 ntf2.zmat -b 30
         
 Study the `in.lmp` and `data.lmp` files. These are LAMMPS input files.
