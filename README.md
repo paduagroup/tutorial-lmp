@@ -16,21 +16,21 @@ Running a molecular simulation with the CL&Pol polarizable force field for ionic
 
 ## Make sure packages are installed
 
-Python3 is necessary to run the tools we develop:
+If you are following this tutorial on a machine of the CBP center at ENS de Lyon, the packages needed are installed. If you are logging to the CBP machines from outside, then it is pertinent that you install VMD in your computer because visualization may be slow over an internet connection.
 
-    python3
-    
+Python 3 is necessary to run the tools we develop.
+
 VMD is a molecular visualization program:
     
     vmd
     
-Packmol is a program that packs molecules in simulation boxes:
+Packmol is a program that packs molecules in simulation boxes.
     
     packmol
     
-Finally, LAMMPS is the molecular dynamics code we use in this tutorial. Try
+Finally, LAMMPS is the molecular dynamics code we use in this tutorial. On the CBP LAMMPS is installed in `/projects/RFCT2022/software/lammps`.
 
-    lmp -h
+    /projects/RFCT2022/software/lammps/bin/lmp -h
     
 and check that the binary was compiled with the DRUDE package
 
