@@ -7,16 +7,17 @@ It involves the following steps:
 1. Make sure the necessary packages are installed: Python, VMD, Packmol, and LAMMPS compiled with the DRUDE package. 
 2. Download the CL&P force field (non-polarizable version), the `fftool` script (to create input files and simulation box) and the `polarizer` tools (to generate the CL&Pol polarizable model).
 3. Create input files and an initial simulation box with the non-polarizable force field using `fftool` and `packmol`.
-4. Run a test trajectory.
+4. Run an equilibration trajectory.
 5. Add explicit polarization terms using the `polarizer` tool.
-6. Run an equilibration trajectory.
-7. Run a production trajectory.
+6. Adjust the Lennard-Jones potentials to account for the explicit induction terms.
+7. Run a polarizable simulation.
 8. Calculate structural and dynamic quantities from the trajectory.
 
 Molecular simulation using force fields requires the specification of **a lot of information** concerning the system (coordinates, topology), the force field model and the simulation conditions. 
 
 **GO SLOWLY. INSPECT INPUT AND OUTPUT FILES. TRY TO UNDERSTAND EACH STEP.**
 
+---
 
 ## 1  Make sure software is installed
 
@@ -40,6 +41,7 @@ Finally, LAMMPS is the molecular dynamics code we use in this tutorial. On the C
     
 and check that the binary was compiled with the DRUDE package (or USER-DRUDE in older versions).
 
+---
 
 ## 2  Download CL&P, fftool and CL&Pol
 
@@ -55,6 +57,7 @@ You can check that `fftool` runs and **learn about the command-line options**:
 
         ~/sim/fftool/fftool -h
 
+---
 
 ## 3  Create a simulation box
 
@@ -119,7 +122,7 @@ The `in.lmp` file contains LAMMPS commands to perform the simulation, so it is m
 
 In our examples it also contains certain informations about the force field, namely:
 
-- the Lennard-Jones parameters for the different atom types,
+- the Lennard-Jones parameters for the different atom types (may be placed in an included file `pair.lmp`),
 - the cutoff distance for the non-bonded interactions,
 - the long-range part of the electrostatic interactions (`kspace`).
 
@@ -157,14 +160,15 @@ If `packmol` takes more than about 30 seconds, the density is probably too high.
 
 Visualize with `vmd`.
 
-Run `fftool` again with `-l` to generate the input files: 
+Run `fftool` again with `-a -l` to generate the input files: 
 
-        ~/sim/fftool/fftool 200 c4c1im.zmat 200 ntf2.zmat -r2.5 -l
+        ~/sim/fftool/fftool 200 c4c1im.zmat 200 ntf2.zmat -r2.5 -a -l
 
 **GOOD! YOU JUST SET UP A SYSTEM!**
 
+---
 
-## 4  Run a test trajectory
+## 4  Run an equilibration trajectory
 
 Run a few steps to make sure the system does not blow up.
 
@@ -200,10 +204,123 @@ Plot density (column 12), temperature (column 9), energies, etc:
 
 **GREAT! YOU JUST RAN A LAMMPS SIMULATION!**
 
-At this point one can perform sufficiently long equilibration (5 ns) and production runs (20 ns) with the CL&P force field, which may be quite useful work to study ionic liquid systems. However, fixed-charge force fields have some issues for ionic fluids: they tend to result in too slow dynamics, so the liquids are too viscous when compared to experiment. Structural quantities, such as radial distribution functions (related to the structure factor measured by X-rays or neutrons), are usually well predicted.
+At this point one can perform sufficiently long equilibration (2 ns) and production runs (5 ns) with the CL&P force field, which may be quite useful work to study ionic liquid systems. However, fixed-charge force fields have some issues for ionic fluids: they tend to result in too slow dynamics, leading to high viscosities when compared to experiment. Structural quantities, such as radial distribution functions (related to the structure factor measured by X-rays or neutrons), are usually well predicted.
 
+---
 
-## 5 Add explicit polarization
+## 5 Add explicit polarization terms
 
-Adding explicit polarization terms involves, in our case, adding Drude particles to atoms (except H) so that induced dipoles appear as a response to the local electrostatic field. These terms are added to a non-polarizable system prepared as in section 3.
+Adding explicit polarization terms involves, in this case, adding Drude particles to atoms (except H) so that induced dipoles appear as a response to the local electrostatic field. These terms are added to a non-polarizable system prepared following the procedure outlined in section 3.
 
+The Drude particles (DP) represent how the canter of the electron clouds is displaced away from the nuclei. They are bonded to their atoms (the Drude cores, DC) by a harmonic potential with equilibrium distance 0, so a number of new bonds has to be created as well. The Drude particles carry a small mass so they can be handled by the integrator. The motion of the Drude particles with respect to their cores is handled by a separate thermostat, keeping the Drude degrees of freedom cold, which results in a trajectory that follows closely the one that would have the relaxed Drudes (which is a slow iterative procedure). There are other details, such as special exclusion lists for the Coulomb interactions and screening functions (Thole damping) to improve the description of electrostatics at short range.
+
+The tools needed to prepare a polarizable system are in the folder `clandpol`.
+
+The main physical parameter for the Drude induced dipoles is the atomic polarizability, which determines the charges in the induced dipoles. These are collected in the file `alpha.ff`.
+
+        cp ~/sim/clandpol/alpha.ff .
+
+The `polarizer` script adds Drude dipoles to a LAMMPS `data.lmp` file:
+
+        ~/sim/clandpol/polarizer -f alpha.ff data.lmp data-p.lmp
+
+The new DP and their bonds to the DC are added into `data-p.lmp`, and the electrostatic charges are modified accordingly. **Study this file.**
+
+It is also possible to start from a system equilibrated with the non-polarizable force field, but for that it is necessary to add the atom labels as comments in the `Masses` section (LAMMPS doesn't write those).
+
+LAMMPS commands to handle the Drude induced dipoles are written to `in-drude.lmp`. These are to be merged with `in.lmp` to produce a new input stack, `in-p.lmp`, for the polarizable simulation.
+
+> **Task:** Try to merge the `in.lmp` and the `in-drude.lmp` files into a new `in-p.lmp`.
+>- Pay attention to: `pair_style hybrid/overlay`
+>- Don't create initial velocities for DP: `velocity ATOMS create ${TK} 12345`
+:
+## 6 Adapt the LJ potentials to account for the explicit induction
+
+There is one last step: to scale down the Lennard-Jones potentials to account for the inclusion of explicit polarization terms. This is a fragment-based procedure. The fragments composing our ions are `c2c1im` for the imidazolium ring, `C4H10` for the side chain, and `ntf2` for the anion.
+
+        cp ~/sim/clandpol/fragment.ff .
+        cp ~/sim/clandpol/fragment_topologies/c2c1im.zmat .
+        cp ~/sim/clandpol/fragment_topologies/C4H10.zmat .
+        cp ~/sim/clandpol/fragment_topologies/ntf2.zmat .
+
+then prepare a simple file attributing the atom indices to the fragments, named `fragment.inp`:
+
+        # name  indices
+        c2c1im  1:9
+        C4H10  10:12
+        ntf2   13:17
+
+Then run the `scaleLJ` script:
+
+        ~/sim/clandpol/scaleLJ -i fragment.inp -s -ip pair.lmp -op pair-sc.lmp
+
+this generates a `pair-sc.lmp` file with scaled LJ parameters (signaled by `~` and `*`).
+
+In `in-p.lmp` change `include pair-p.lmp` to `include pair-sc.lmp`.
+
+**EXCELLENT! YOU ARE READY TO LAUNCH A POLARIZABLE SIMULATION!**
+
+---
+
+## 7. Run a polarizable simulation
+
+Run a test trajectory of 10000 steps printing every 100:
+
+        mpirun -np 16 $LMP/bin/lmp -in in-p.lmp > out-p.lmp &
+
+It is highly likely you'll need to add an option to the `read_data` command in `in-p.lmp`:
+
+        read_data data-p.lmp extra/special/per/atom 6
+
+LAMMPS will exit with a message.
+
+Follow the progress:
+
+        tail -f out-p.lmp
+
+paying attention to the temperatures of the center of mass of molecules, of the intramolecular degrees of freedom, and of the Drude degrees of freedom, printed by the Drude integrator, `fix tgnh/npt`:
+
+        f_TSTAT[1] f_TSTAT[2] f_TSTAT[3]
+
+The first two should be close to the temperature of the thermostat and the third around 1 K.
+
+**FANTASTIC! YOU ARE RUNNING POLARIZABLE MOLECULAR DYNAMICS!**
+
+---
+
+## 8.  Calculate structural and dynamic quantities
+
+Usually one would include calculations of diffusion coefficients or radial distribution functions in the `in-p.lmp`. But because of time limitations it is not feasible to run a nanosecond trajectory in a lab session. So, we can use previously generated trajectories and calculated quantities from there, using the LAMMPS `rerun` command.
+
+One trajectory was obtained using the CL&P force field and contains 1000 configurations generated over 2 ns:
+
+        cp /projects/RFCR2022/il/fixq/dump.lammpstrj .
+        cp /projects/RFCR2022/il/fixq/in-rerun.lmp .
+
+Another trajectory was obtained with the CL&Pol force field and contains 1000 configurations generated over 1 ns:
+
+        cp /projects/RFCR2022/il/drude/dump.lammpstrj .
+        cp /projects/RFCR2022/il/drude/in-rerun.lmp .
+
+Read the `in-rerun.lmp` files to see how the calculations of diffusion coefficients (`compute MSD`) and radial distribution functions (`compute rdf`) are setup and how the configurations are read from the `dump` file via the `rerun` command.
+
+Then run the calculations:
+
+        mpirun -np 4 $LMP/bin/lmp -in in-rerun.lmp > out-rerun.lmp &
+
+Plot the cation and anion diffusion coefficients:
+
+        gnuplot
+        gnuplot> plot 'log.lammps' u 1:XX w l
+        gnuplot> replot 'log.lammps' u 1:XX w l
+
+Plot radial distribution functions between cation N atoms and anion O atoms:
+
+        gnuplot
+        gnuplot> plot 'rdf.lmp' u 1:XX w l
+
+**OUTSTANDING! YOU COMPETED ALL THE TASKS!**
+
+---
+
+Feedback to improve clarity is appreciated.
