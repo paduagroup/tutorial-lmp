@@ -301,8 +301,6 @@ Usually one would include calculations of diffusion coefficients or radial distr
 
         read_data data.eq.lmp
 
-        timestep 1.0
-
         # mean-squared displacements
         group cat molecule 1:200
         group ani molecule 201:400
@@ -322,7 +320,7 @@ Usually one would include calculations of diffusion coefficients or radial distr
 
 These commands specify calculations of diffusion coefficients (`compute MSD`) and radial distribution functions (`compute rdf`) and then the configurations are read from the `dump` file via the `rerun` command.
 
-Backup your `log.lammps` and run the calculations:
+Backup your previous `log.lammps` and run the calculations:
 
         mv log.lammps log-run.lammps
         mpirun -np 16 $LMP/lmp -in in-rerun.lmp > out-rerun.lmp &
