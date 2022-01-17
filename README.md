@@ -333,7 +333,7 @@ Plot the cation and anion diffusion coefficients:
         gnuplot> plot 'log.lammps' u 2:3 w l
         gnuplot> replot 'log.lammps' u 2:4 w l
 
-Plot radial distribution functions between cation N atoms and anion O atoms:
+Plot radial distribution functions between NA and CT atoms from the cations, and N and O atoms from the anions:
 
         gnuplot
         gnuplot> plot 'rdf.lmp' u 2:3 w l t 'NA-NA'
@@ -341,7 +341,10 @@ Plot radial distribution functions between cation N atoms and anion O atoms:
         gnuplot> replot 'rdf.lmp' u 2:7 w l t 'NA-O'
         gnuplot> replot 'rdf.lmp' u 2:9 w l t 'CT-CT'
 
-**OUTSTANDING! YOU COMPETED ALL THE TASKS!**
+**CONGRATULATIONS FOR COMPLETING THE TUTORIAL!**
+
+You've learned the typical workflow involved in polarizable molecular dynamics simulations of ionic liquids.
+
 
 ---
 
