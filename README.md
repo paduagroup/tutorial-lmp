@@ -7,7 +7,7 @@ This tutorial gives step-by-step instructions to setup a system and run a molecu
 3. Create input files and an initial simulation box with the non-polarizable force field using `fftool` and `packmol`.
 4. Run an equilibration trajectory.
 5. Add explicit polarization terms using the `polarizer` tool.
-6. Adjust the Lennard-Jones potentials to account for the explicit induction terms.
+6. Adjust the Lennard-Jones potentials to account for the explicit polarization terms.
 7. Run a polarizable simulation.
 8. Calculate structural and dynamic quantities from the trajectory.
 
@@ -233,7 +233,7 @@ LAMMPS commands to handle the Drude induced dipoles are written to `in-drude.lmp
 >- Pay attention to: `pair_style hybrid/overlay`
 >- Don't create initial velocities for DP: `velocity ATOMS create ${TK} 12345`
 :
-## 6 Adapt the LJ potentials to account for the explicit induction
+## 6 Adapt the LJ potentials to account for explicit polarization
 
 There is one last step: to scale down the Lennard-Jones potentials to account for the inclusion of explicit polarization terms. This is a fragment-based procedure. The fragments composing our ions are `c2c1im` for the imidazolium ring, `C4H10` for the side chain, and `ntf2` for the anion.
 
