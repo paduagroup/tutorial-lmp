@@ -1,8 +1,6 @@
 # tutorial-lmp
 
-This tutorial gives step-by-step instructions to setup a system and run a molecular dynamics simulation with the CL&P (fixed-charge) and the CL&Pol (polarizable) force fields for ionic liquids, using the LAMMPS code.
-
-It involves the following steps:
+This tutorial gives step-by-step instructions to setup a system and run a molecular dynamics simulation with the CL&P (fixed-charge) and the CL&Pol (polarizable) force fields for ionic liquids, using the LAMMPS code. It involves the following steps:
 
 1. Make sure the necessary packages are installed: Python, VMD, Packmol, and LAMMPS compiled with the DRUDE package. 
 2. Download the CL&P force field (non-polarizable version), the `fftool` script (to create input files and simulation box) and the `polarizer` tools (to generate the CL&Pol polarizable model).
@@ -21,25 +19,26 @@ Molecular simulation using force fields requires the specification of **a lot of
 
 ## 1  Make sure software is installed
 
-If you are following this tutorial on a machine of the CBP center at ENS de Lyon, the packages needed are installed. If you are logging to the CBP machines from outside, then it is pertinent that you install VMD in your computer because visualization may be slow over an internet connection.
+>If you are following this tutorial on a machine of the CBP center at ENS de Lyon, the packages needed are installed. If you login to a CBP machine from outside, then it is pertinent you install VMD in your computer because visualization may be slow over an internet connection.
 
 Python 3 is necessary to run the tools we develop.
 
-VMD is a molecular visualization program:
+VMD is a molecular visualization program.
     
         vmd
-    
+
+Gnuplot is good to quickly plot graphs (you can use any other plotting software).
+
 Packmol is a program that packs molecules in simulation boxes:
     
         packmol
     
-Finally, LAMMPS is the molecular dynamics code we use in this tutorial. On the CBP LAMMPS is installed in `/projects/RFCT2022/software/lammps`:
+Finally, LAMMPS is the molecular dynamics code we use in this tutorial.
 
-
-        export LMP=/projects/RFCT2022/software/lammps
-        $LMP/bin/lmp -h
+        export LMP=/path/to/lammps/bin
+        $LMP/lmp -h
     
-and check that the binary was compiled with the DRUDE package (or USER-DRUDE in older versions).
+and check that LAMMPS was compiled with the MOLECULE, KSPACE, CORESHELL and DRUDE packages (or USER-XXXX in older versions).
 
 ---
 
@@ -53,7 +52,7 @@ These tools are available on [github.com/paduagroup](https://github.com/paduagro
         git clone https://github.com/paduagroup/fftool
         git clone https://github.com/paduagroup/clanpol
         
-You can check that `fftool` runs and **learn about the command-line options**:
+You can check that `fftool` runs and **learn about its command-line options**:
 
         ~/sim/fftool/fftool -h
 
@@ -72,7 +71,7 @@ copy the CL&P  parameter database and molecule specification files for the ions:
         cp ~/sim/clandp/c4c1im.zmat .
         cp ~/sim/clandp/ntf2.zmat .
         
-Study these files. The molecule specification files contain atomic coordinates in `xyz` or `z-matrix` format and point to a file `.ff` which is the database of force-field parameters.
+Study these files. The molecule specification files contain atomic coordinates in `xyz` or `z-matrix` format and point to a `.ff` file which is the database of force-field parameters.
 
 
 ### 3.1 Create a test system with one molecule or ion
@@ -89,7 +88,7 @@ Use `packmol` to generate the atomic coordinates placing the ions in the box:
 
         packmol < pack.inp
 
-Display the molecules in the box:
+This generates a `simbox.xyz` file with coordinates. Display the molecules in the box:
 
         vmd simbox.xyz
 
@@ -100,7 +99,7 @@ Run `fftool` again repeating the previous command line with `-l` to generate the
 
 ### 3.2 Look at the `data.lmp` file
 
-The `data.lmp` file describes the system to be simulated and is usually a large file, not meant to be edited by hand. It includes atomic coordinates, electrostatic charges and molecular topology (every atom, bond, angle, torsion in the system). LAMMPS is a very atomistic code, working at the level of the atoms, with molecules thinly defined by just an index.
+The `data.lmp` file describes the system to be simulated and is usually a large file, not meant to be edited by hand. It includes box dimensions, atomic coordinates, electrostatic charges and molecular topology (every atom, bond, angle, torsion in the system). LAMMPS is a very atomistic code, working at the level of the atoms, with molecules thinly defined by just an index.
 
 **Verify the number of bonds**: if this is not the number expected for the molecule, then the topology is wrong (maybe the initial geometry is not correct, with some bonds significantly different from the equilibrium distances in the force field file `il.ff`).
 
@@ -183,7 +182,7 @@ Edit the `in.lmp` to run a few steps in NPT:
 
 Run on 16 cores:
 
-        mpirun -np 16 $LMP/bin/lmp -in in.lmp > out.lmp &
+        mpirun -np 16 $LMP/lmp -in in.lmp > out.lmp &
 
 Follow the progress with (`Ctrl-C` to exit)
 
@@ -266,7 +265,7 @@ In `in-p.lmp` change `include pair-p.lmp` to `include pair-sc.lmp`.
 
 Run a test trajectory of 10000 steps printing every 100:
 
-        mpirun -np 16 $LMP/bin/lmp -in in-p.lmp > out-p.lmp &
+        mpirun -np 16 $LMP/lmp -in in-p.lmp > out-p.lmp &
 
 It is highly likely you'll need to add an option to the `read_data` command in `in-p.lmp`:
 
@@ -290,23 +289,23 @@ The first two should be close to the temperature of the thermostat and the third
 
 ## 8.  Calculate structural and dynamic quantities
 
-Usually one would include calculations of diffusion coefficients or radial distribution functions in the `in-p.lmp`. But because of time limitations it is not feasible to run a nanosecond trajectory in a lab session. So, we can use previously generated trajectories and calculated quantities from there, using the LAMMPS `rerun` command.
+Usually one would include calculations of diffusion coefficients or radial distribution functions in the `in-p.lmp`. Other times, one uses previously generated trajectories and calculated quantities from there, using the LAMMPS `rerun` command.
 
-One trajectory was obtained using the CL&P force field and contains 1000 configurations generated over 2 ns:
-
-        cp /projects/RFCR2022/il/fixq/dump.lammpstrj .
-        cp /projects/RFCR2022/il/fixq/in-rerun.lmp .
-
-Another trajectory was obtained with the CL&Pol force field and contains 1000 configurations generated over 1 ns:
-
-        cp /projects/RFCR2022/il/drude/dump.lammpstrj .
-        cp /projects/RFCR2022/il/drude/in-rerun.lmp .
-
-Read the `in-rerun.lmp` files to see how the calculations of diffusion coefficients (`compute MSD`) and radial distribution functions (`compute rdf`) are setup and how the configurations are read from the `dump` file via the `rerun` command.
+>One trajectory was obtained using the CL&P force field and contains 1000 configurations generated over 2 ns:
+>
+>        cp /projects/RFCR2022/il/fixq/dump.lammpstrj .
+>        cp /projects/RFCR2022/il/fixq/in-rerun.lmp .
+>
+>Another trajectory was obtained with the CL&Pol force field and contains 1000 >configurations generated over 1 ns:
+>
+>        cp /projects/RFCR2022/il/drude/dump.lammpstrj .
+>        cp /projects/RFCR2022/il/drude/in-rerun.lmp .
+>
+>Read the `in-rerun.lmp` files to see how the calculations of diffusion coefficients (`compute MSD`) and radial distribution functions (`compute rdf`) are setup and how the configurations are read from the `dump` file via the `rerun` command.
 
 Then run the calculations:
 
-        mpirun -np 4 $LMP/bin/lmp -in in-rerun.lmp > out-rerun.lmp &
+        mpirun -np 4 $LMP/lmp -in in-rerun.lmp > out-rerun.lmp &
 
 Plot the cation and anion diffusion coefficients:
 
@@ -323,4 +322,4 @@ Plot radial distribution functions between cation N atoms and anion O atoms:
 
 ---
 
-Feedback to improve clarity is appreciated.
+Feedback to improve this tutorial is appreciated.
