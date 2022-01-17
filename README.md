@@ -289,34 +289,57 @@ The first two should be close to the temperature of the thermostat and the third
 
 ## 8.  Calculate structural and dynamic quantities
 
-Usually one would include calculations of diffusion coefficients or radial distribution functions in the `in-p.lmp`. Other times, one uses previously generated trajectories and calculated quantities from there, using the LAMMPS `rerun` command.
+Usually one would include calculations of diffusion coefficients or radial distribution functions in the `in-p.lmp`. Other times, one uses previously generated trajectories and calculated quantities from there, using the LAMMPS `rerun` command, which is fast. For that, prepare a `in-rerun.lmp`:
 
->One trajectory was obtained using the CL&P force field and contains 1000 configurations generated over 2 ns:
->
->        cp /projects/RFCR2022/il/fixq/dump.lammpstrj .
->        cp /projects/RFCR2022/il/fixq/in-rerun.lmp .
->
->Another trajectory was obtained with the CL&Pol force field and contains 1000 >configurations generated over 1 ns:
->
->        cp /projects/RFCR2022/il/drude/dump.lammpstrj .
->        cp /projects/RFCR2022/il/drude/in-rerun.lmp .
->
->Read the `in-rerun.lmp` files to see how the calculations of diffusion coefficients (`compute MSD`) and radial distribution functions (`compute rdf`) are setup and how the configurations are read from the `dump` file via the `rerun` command.
+        units real
+        boundary p p p
 
-Then run the calculations:
+        atom_style full
+        bond_style harmonic
+        angle_style harmonic
+        dihedral_style opls
 
-        mpirun -np 4 $LMP/lmp -in in-rerun.lmp > out-rerun.lmp &
+        read_data data.eq.lmp
+
+        timestep 1.0
+
+        # mean-squared displacements
+        group cat molecule 1:200
+        group ani molecule 201:400
+        compute MSDcat cat msd
+        compute MSDani ani msd
+
+        # calculate radial distribution functions NA-NA N-N NA-O CT-CT
+        comm_modify cutoff 22.0
+        neigh_modify one 3000
+        compute RDF all rdf 200 1 1 16 16 1 17 12 12 cutoff 20.0
+        fix RDF all ave/time 2000 1000 2000000 c_RDF[*] file rdf.lmp mode vector
+
+        thermo 2000
+        thermo_style custom step time c_MSDcat[4] c_MSDani[4]
+
+        rerun dump.lammpstrj dump x y z box yes
+
+These commands specify calculations of diffusion coefficients (`compute MSD`) and radial distribution functions (`compute rdf`) and then the configurations are read from the `dump` file via the `rerun` command.
+
+Backup your `log.lammps` and run the calculations:
+
+        mv log.lammps log-run.lammps
+        mpirun -np 16 $LMP/lmp -in in-rerun.lmp > out-rerun.lmp &
 
 Plot the cation and anion diffusion coefficients:
 
         gnuplot
-        gnuplot> plot 'log.lammps' u 1:XX w l
-        gnuplot> replot 'log.lammps' u 1:XX w l
+        gnuplot> plot 'log.lammps' u 2:3 w l
+        gnuplot> replot 'log.lammps' u 2:4 w l
 
 Plot radial distribution functions between cation N atoms and anion O atoms:
 
         gnuplot
-        gnuplot> plot 'rdf.lmp' u 1:XX w l
+        gnuplot> plot 'rdf.lmp' u 2:3 w l t 'NA-NA'
+        gnuplot> replot 'rdf.lmp' u 2:5 w l t 'NA-N'
+        gnuplot> replot 'rdf.lmp' u 2:7 w l t 'NA-O'
+        gnuplot> replot 'rdf.lmp' u 2:9 w l t 'CT-CT'
 
 **OUTSTANDING! YOU COMPETED ALL THE TASKS!**
 
