@@ -309,14 +309,14 @@ Usually one would include calculations of diffusion coefficients or radial distr
         compute MSDcat cat msd
         compute MSDani ani msd
 
-        # calculate radial distribution functions NA-NA N-N NA-O CT-CT
+        # radial distribution functions NA-NA N-N NA-O CT-CT
         comm_modify cutoff 22.0
         neigh_modify one 3000
         compute RDF all rdf 200 1 1 16 16 1 17 12 12 cutoff 20.0
         fix RDF all ave/time 2000 1000 2000000 c_RDF[*] file rdf.lmp mode vector
 
         thermo 2000
-        thermo_style custom step time c_MSDcat[4] c_MSDani[4]
+        thermo_style custom step c_MSDcat[4] c_MSDani[4]
 
         rerun dump.lammpstrj dump x y z box yes
 
@@ -330,8 +330,8 @@ Backup your `log.lammps` and run the calculations:
 Plot the cation and anion diffusion coefficients:
 
         gnuplot
-        gnuplot> plot 'log.lammps' u 2:3 w l
-        gnuplot> replot 'log.lammps' u 2:4 w l
+        gnuplot> plot 'log.lammps' u 1:2 w l
+        gnuplot> replot 'log.lammps' u 1:3 w l
 
 Plot radial distribution functions between NA and CT atoms from the cations, and N and O atoms from the anions:
 
