@@ -1,6 +1,6 @@
 # tutorial-lmp
 
-This tutorial gives step-by-step instructions to setup a system and run a molecular dynamics simulation with the CL&P (fixed-charge) and the CL&Pol (polarizable) force fields for ionic liquids, using the LAMMPS code. It involves the following steps:
+This tutorial gives step-by-step instructions to setup a system and run a molecular dynamics simulation with the CL&P (fixed-charge) and the CL&Pol (polarizable) force fields for ionic liquids, using the LAMMPS code. It guides through the following steps:
 
 1. Make sure the necessary packages are installed: Python, VMD, Packmol, and LAMMPS compiled with the DRUDE package. 
 2. Download the CL&P force field (non-polarizable version), the `fftool` script (to create input files and simulation box) and the `polarizer` tools (to generate the CL&Pol polarizable model).
