@@ -96,7 +96,7 @@ This generates a `simbox.xyz` file with coordinates. Display the molecules in th
 
 Run `fftool` again repeating the previous command line with `-l` to generate the LAMMPS input files:
 
-        ~/sim/fftool/fftool 1 c4c1im.zmat 1 -b 30 -l
+        ~/sim/fftool/fftool 1 c4c1im.zmat -b 30 -l
         
 
 ### 3.2 Look at the `data.lmp` file
