@@ -52,7 +52,7 @@ These tools are available on [github.com/paduagroup](https://github.com/paduagro
         git clone https://github.com/paduagroup/fftool
         git clone https://github.com/paduagroup/clanpol
 
-If cloning doens't because of permissions, try to download directly from the GitHub page.
+If cloning doens't work because of permissions, try to download directly from the GitHub page.
 
 You can check that `fftool` runs and **learn about its command-line options**:
 
