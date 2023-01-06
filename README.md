@@ -166,7 +166,7 @@ Run `fftool` again with `-a -l` to generate the input files:
 
         ~/sim/fftool/fftool 200 c4c1im.zmat 200 ntf2.zmat -r2.5 -a -l
 
-**GOOD! YOU JUST SET UP A SYSTEM!**
+**Good! You just set up a system!**
 
 ---
 
@@ -191,7 +191,7 @@ Follow the progress with (`Ctrl-C` to exit)
 
         tail -f out.lmp
 
-Once LAMMPS finishes, note the performance in ns/day. See in which tasks it spends most of the computation time (pair interactions, k-space electrostatics, ...).
+Once LAMMPS terminates, note the performance in ns/day. See in which tasks it spends most of the computation time (pair interactions, k-space electrostatics, ...).
 
 Visualize the trajectory:
 
@@ -204,9 +204,11 @@ Plot density (column 12), temperature (column 9), energies, etc:
         gnuplot
         gnuplot> plot 'log.lammps' u 1:12 w lp
 
-**GREAT! YOU JUST RAN A LAMMPS SIMULATION!**
+**Great! You just ran a LAMMPS simulation!**
 
-At this point one can perform sufficiently long equilibration (2 ns) and production runs (5 ns) with the CL&P force field, which may be quite useful work to study ionic liquid systems. However, fixed-charge force fields have some issues for ionic fluids: they tend to result in too slow dynamics, leading to high viscosities when compared to experiment. Structural quantities, such as radial distribution functions (related to the structure factor measured by X-rays or neutrons), are usually well predicted.
+At this point you could perform sufficiently long equilibration (2 ns) and production runs (5 ns) with the CL&P force field, which may be quite useful work to study ionic liquid systems.
+
+However, fixed-charge force fields have some issues for ionic fluids: they tend to give too slow dynamics, leading to high viscosities when compared to experiment. Structural quantities, such as radial distribution functions (related to the structure factor measured by X-rays or neutrons), are usually well predicted.
 
 ---
 
@@ -214,11 +216,15 @@ At this point one can perform sufficiently long equilibration (2 ns) and product
 
 Adding explicit polarization terms involves, in this case, adding Drude particles to atoms (except H) so that induced dipoles appear as a response to the local electrostatic field. These terms are added to a non-polarizable system prepared following the procedure outlined in section 3.
 
-The Drude particles (DP) represent how the canter of the electron clouds is displaced away from the nuclei. They are bonded to their atoms (the Drude cores, DC) by a harmonic potential with equilibrium distance 0, so a number of new bonds has to be created as well. The Drude particles carry a small mass so they can be handled by the integrator. The motion of the Drude particles with respect to their cores is handled by a separate thermostat, keeping the Drude degrees of freedom cold, which results in a trajectory that follows closely the one that would have the relaxed Drudes (which is a slow iterative procedure). There are other details, such as special exclusion lists for the Coulomb interactions and screening functions (Thole damping) to improve the description of electrostatics at short range.
+The Drude particles (DP) represent how the canter of the electron clouds is displaced away from the nuclei. They are bonded to their atoms (the Drude cores, DC) by a harmonic potential with equilibrium distance 0, so besides the new particles, new bonds have to be created in the systems.
+
+The Drude particles carry a small mass so they can be handled by the integrator. The motion of the Drude particles with respect to their cores is handled by a separate, specialized thermostat, keeping the Drude degrees of freedom cold, which results in a trajectory that follows closely the one that would have the relaxed Drudes (which would require a slow iterative procedure).
+
+There are additional details, such as special exclusion lists for the Coulomb interactions and screening functions (Thole damping) to improve the description of electrostatics at short range.
 
 The tools needed to prepare a polarizable system are in the folder `clandpol`.
 
-The main physical parameter for the Drude induced dipoles is the atomic polarizability, which determines the charges in the induced dipoles. These are collected in the file `alpha.ff`.
+The main physical parameter required for the Drude induced dipoles is the atomic polarizability, which determines the charges in the induced dipoles. These are collected in the file `alpha.ff`.
 
         cp ~/sim/clandpol/alpha.ff .
 
@@ -228,7 +234,7 @@ The `polarizer` script adds Drude dipoles to a LAMMPS `data.lmp` file:
 
 The new DP and their bonds to the DC are added into `data-p.lmp`, and the electrostatic charges are modified accordingly. **Study this file.**
 
-It is also possible to start from a system equilibrated with the non-polarizable force field, but for that it is necessary to add the atom labels as comments in the `Masses` section (LAMMPS doesn't write those).
+>It is also possible to start from a system equilibrated with the non-polarizable force field, but for that it is necessary to add the atom labels as comments in the `Masses` section (LAMMPS doesn't write those).
 
 LAMMPS commands to handle the Drude induced dipoles are written to `in-drude.lmp`. These are to be merged with `in.lmp` to produce a new input stack, `in-p.lmp`, for the polarizable simulation.
 
@@ -260,7 +266,7 @@ this generates a `pair-sc.lmp` file with scaled LJ parameters (signaled by `~` a
 
 In `in-p.lmp` change `include pair-p.lmp` to `include pair-sc.lmp`.
 
-**EXCELLENT! YOU ARE READY TO LAUNCH A POLARIZABLE SIMULATION!**
+**Excellent! You are ready to launch a polarizable simulation!**
 
 ---
 
@@ -274,9 +280,9 @@ It is highly likely you'll need to add an option to the `read_data` command in `
 
         read_data data-p.lmp extra/special/per/atom 6
 
-LAMMPS will exit with a message.
+LAMMPS will exit with a message telling you this.
 
-Follow the progress:
+Follow the progress of the run:
 
         tail -f out-p.lmp
 
@@ -286,13 +292,13 @@ paying attention to the temperatures of the center of mass of molecules, of the 
 
 The first two should be close to the temperature of the thermostat and the third around 1 K.
 
-**FANTASTIC! YOU ARE RUNNING POLARIZABLE MOLECULAR DYNAMICS!**
+**Fantastic! You are running MD with a polarizable force field!**
 
 ---
 
 ## 8.  Calculate structural and dynamic quantities
 
-Usually one would include calculations of diffusion coefficients or radial distribution functions in the `in-p.lmp`. Other times, one uses previously generated trajectories and calculated quantities from there, using the LAMMPS `rerun` command, which is fast. For that, prepare a `in-rerun.lmp`:
+Sometimes, one includes calculations of diffusion coefficients or radial distribution functions in the `in-p.lmp`. Other times, one uses previously generated trajectories and calculates quantities from there, using the LAMMPS `rerun` command, which is fast. For that, prepare a `in-rerun.lmp`:
 
         units real
         boundary p p p
@@ -342,7 +348,7 @@ Plot radial distribution functions between NA and CT atoms from the cations, and
         gnuplot> replot 'rdf.lmp' u 2:7 w l t 'NA-O'
         gnuplot> replot 'rdf.lmp' u 2:9 w l t 'CT-CT'
 
-**CONGRATULATIONS FOR COMPLETING THE TUTORIAL!**
+**Congratulations for completing the tutorial!**
 
 You've learned the typical workflow involved in polarizable molecular dynamics simulations of ionic liquids.
 
