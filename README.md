@@ -5,7 +5,7 @@ This tutorial gives step-by-step instructions to setup a system and run a molecu
 1. Make sure the necessary packages are installed: Python, VMD, Packmol, and LAMMPS compiled with the DRUDE package. 
 2. Download the CL&P force field (non-polarizable version), the `fftool` script (to create input files and simulation box) and the `polarizer` tools (to generate the CL&Pol polarizable model).
 3. Create input files and an initial simulation box with the non-polarizable force field using `fftool` and `packmol`.
-4. Run an equilibration trajectory.
+4. Run an equilibration trajectory (fixed-charge model).
 5. Add explicit polarization terms using the `polarizer` tool.
 6. Adjust the Lennard-Jones potentials to account for the explicit polarization terms.
 7. Run a polarizable simulation.
@@ -13,15 +13,15 @@ This tutorial gives step-by-step instructions to setup a system and run a molecu
 
 Molecular simulation using force fields requires the specification of **a lot of information** concerning the system (coordinates, topology), the force field model and the simulation conditions. 
 
-**GO SLOWLY. INSPECT INPUT AND OUTPUT FILES. TRY TO UNDERSTAND EACH STEP.**
+**Go slowly. Inspect input and output files. Try to understand each step.**
 
 ---
 
 ## 1  Make sure software is installed
 
->If you are following this tutorial on a machine of the CBP center at ENS de Lyon, the packages needed are installed. If you login to a CBP machine from outside, then it is pertinent you install VMD in your computer because visualization may be slow over an internet connection.
+>If you are following this tutorial on a machine of the CBP center at ENS de Lyon, the packages needed are installed. If you login to a CBP machine from outside, then it is pertinent that you install VMD in your computer because visualization may be slow over an internet connection.
 
-Python 3 is necessary to run the tools we develop.
+Python 3 is necessary to run the tools we develop in the group (`fftool`, etc).
 
 VMD is a molecular visualization program.
     
@@ -29,7 +29,7 @@ VMD is a molecular visualization program.
 
 Gnuplot is good to quickly plot graphs (you can use any other plotting software).
 
-Packmol is a program that packs molecules in simulation boxes:
+Packmol is a program that packs molecules in simulation boxes.
     
         packmol
     
@@ -38,7 +38,8 @@ Finally, LAMMPS is the molecular dynamics code we use in this tutorial.
         export LMP=/path/to/lammps/bin
         $LMP/lmp -h
     
-and check that LAMMPS was compiled with the MOLECULE, KSPACE, CORESHELL and DRUDE packages (or USER-XXXX in older versions).
+and check that LAMMPS was compiled with the MOLECULE, KSPACE, CORESHELL and DRUDE packages.
+ 
 
 ---
 
@@ -52,7 +53,7 @@ These tools are available on [github.com/paduagroup](https://github.com/paduagro
         git clone https://github.com/paduagroup/fftool
         git clone https://github.com/paduagroup/clanpol
 
-If cloning doens't work because of permissions, try to download directly from the GitHub page.
+If cloning doesn't work because of permissions, try to download a zip archive directly from the GitHub pages.
 
 You can check that `fftool` runs and **learn about its command-line options**:
 
@@ -62,12 +63,12 @@ You can check that `fftool` runs and **learn about its command-line options**:
 
 ## 3  Create a simulation box
 
-Let's try one of the most studied ionic liquids, composed of the butylmethylimidazolium cation and the bistriflamide anion, [C4C1im][Ntf2]:
+Let's try one of the most studied ionic liquids, composed of the butylmethylimidazolium cation and the bis(trifluoromethanesulfonyl)amide anion (a.k.a. TFSI), [C4C1im][Ntf2]:
 
         mkdir c4c1im_ntf2
         cd c4c1im_ntf2
 
-copy the CL&P  parameter database and molecule specification files for the ions:
+copy the CL&P parameter database and molecule specification files for these ions:
 
         cp ~/sim/clandp/il.ff .
         cp ~/sim/clandp/c4c1im.zmat .
@@ -84,17 +85,17 @@ Use `fftool` to create a system with **one molecule** in a cubic box of 30 Å si
 
 **Verify the electrostatic charge** of the molecule or ion (if it is not an integer then the attribution of atom types from the force field is not correct).
 
-Inspect the `pack.inp` file, which contains instructions for `packmol` to place the molecules in the simulation box.
+Inspect the `pack.inp` file, which contains instructions for `packmol` to pack the molecules in the simulation box.
 
-Use `packmol` to generate the atomic coordinates placing the ions in the box:
+Use `packmol` to generate the atomic coordinates packing the ions in the box:
 
         packmol < pack.inp
 
-This generates a `simbox.xyz` file with coordinates. Display the molecules in the box:
+This generates a `simbox.xyz` file with atomic coordinates. View the molecules in the box:
 
         vmd simbox.xyz
 
-Run `fftool` again repeating the previous command line with `-l` to generate the LAMMPS input files:
+Run `fftool` again repeating the previous command line with `-l` to generate the LAMMPS input files including the force field and the initial configuration:
 
         ~/sim/fftool/fftool 1 c4c1im.zmat -b 30 -l
         
@@ -105,7 +106,7 @@ The `data.lmp` file describes the system to be simulated and is usually a large 
 
 **Verify the number of bonds**: if this is not the number expected for the molecule, then the topology is wrong (maybe the initial geometry is not correct, with some bonds significantly different from the equilibrium distances in the force field file `il.ff`).
 
-> **Question:** What is the general rule to determine the number of bonds in a molecule given the number of atoms and cycles? (It's easy.) And for the number of angles (between 3 atoms connected 1-2-3) and dihedrals (between 4 atoms connected 1-2-3-4)?
+> **Question:** What is the general rule to determine the number of bonds in a molecule given the number of atoms and cycles? (It's easy.) And the number of angles (between 3 atoms connected 1-2-3)? And torsions or dihedrals (between 4 atoms connected 1-2-3-4)?
 
 Look at the `Atoms` section which lists: atom index, molecule index, atom type, charge, x, y, z.
 
@@ -119,28 +120,28 @@ Look at the `Atoms` section which lists: atom index, molecule index, atom type, 
 
 ### 3.3  Study the `in.lmp` file
 
-The `in.lmp` file contains LAMMPS commands to perform the simulation, so it is meant to be read and modified by a person.
+The `in.lmp` file contains LAMMPS commands to perform a simulation, so it is meant to be read and modified by the user.
 
 In our examples it also contains certain informations about the force field, namely:
 
-- the Lennard-Jones parameters for the different atom types (may be placed in an included file `pair.lmp`),
+- the Lennard-Jones parameters of the different atom types (may be placed in an included file `pair.lmp`),
 - the cutoff distance for the non-bonded interactions,
 - the long-range part of the electrostatic interactions (`kspace`).
 
-LAMMPS has a **very large set of commands**, which you can get acquainted with at [docs.lammps.org/Commands.html](https://docs.lammps.org/Commands.html). LAMMPS is a generalist code that can model molecules and materials, and perform sophisticated calculations during the run itself, so it provides a wide array of commands to evaluate quantities or to modify the system.
+LAMMPS has a **very large set of commands**, which you can get acquainted with at [docs.lammps.org/Commands.html](https://docs.lammps.org/Commands.html). LAMMPS is a generalist code that can model molecules and materials, and perform many different calculations during the run itself, so it provides a wide array of commands to evaluate quantities or to modify the system.
 
 Two important classes of LAMMPS commands are `fix` and `compute`:
 
-- a `fix` is executed in the main time-step iteration loop of molecular dynamics, at specified intervals; a `fix` is referred to in other commands by prepending `f_`;
+- a `fix` is executed in the main time-step iteration loop of molecular dynamics, at specified intervals; `fix`es are the main workhorses to perform calculations or operate on the system in LAMMPS; a `fix` is referred to in other commands by prepending `f_`;
 - a `compute` declares a calculation but does not execute it: it has to be called from a `fix` by prepending `c_`.
     
-The `variable` command declares numerical, formula or other types of variables that can be used in other commands by prepending `v_`.
+The `variable` command declares variables containing either numerical values, formulas or other types that can be used in other commands by prepending `v_`.
 
 The `thermo` command prints information on thermodynamic quantities during the simulation (energies, temperature, pressure, density, etc.) and can also print values of computes, fixes and variables (it acts like a `fix`).
 
-The `dump` command writes configurations to a trajectory file.
+The `dump` command writes configurations to a trajectory file, which `vmd` can display.
 
-The integrator of the equations of motion, a central piece in molecular dynamics, is a `fix`. LAMMPS has a choice of integrators including `fix nve`, `fix nvt` to couple the system with a thermostat, or `fix npt` to maintain pressure by changing the box dimensions.
+Integrators of the equations of motion, a central piece in molecular dynamics, are implemented as `fix`es. LAMMPS has a choice of integrators including `fix nve` (isolated system), `fix nvt` to couple the system with a thermostat, or `fix npt` add pressure regulation by changing the box dimensions.
 
 Every command used in a simulation should be fully understood. This is a long learning process...
 
