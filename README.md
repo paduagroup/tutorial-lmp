@@ -49,7 +49,7 @@ These tools are available on [github.com/paduagroup](https://github.com/paduagro
 
         mkdir sim
         cd sim
-        git clone https://github.com/paduagroup/clanp
+        git clone https://github.com/paduagroup/clandp
         git clone https://github.com/paduagroup/fftool
         git clone https://github.com/paduagroup/clanpol
 
