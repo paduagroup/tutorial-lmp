@@ -51,7 +51,7 @@ These tools are available on [github.com/paduagroup](https://github.com/paduagro
         cd sim
         git clone https://github.com/paduagroup/clandp
         git clone https://github.com/paduagroup/fftool
-        git clone https://github.com/paduagroup/clanpol
+        git clone https://github.com/paduagroup/clandpol
 
 If cloning doesn't work because of permissions, try to download a zip archive directly from the GitHub pages.
 
